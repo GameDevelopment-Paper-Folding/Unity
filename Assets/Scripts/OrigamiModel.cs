@@ -36,8 +36,8 @@ public class OrigamiModel : MonoBehaviour
     {
         public int node1;//index of node
         public int node2;
-        public int Triangle1;
-        public int Triangle2;
+        public int Triangle1=-1;//这条边（从node1到node2）对于三角形1是顺时针
+        public int Triangle2=-1;//逆时针
         public EdgeType type;
         public float init_length;
         public float GetLength()
@@ -50,15 +50,90 @@ public class OrigamiModel : MonoBehaviour
             nodes[node2].f += (nodes[node1].position - nodes[node2].position).normalized * (k_axial) * (GetLength() - init_length);
         }
         public void SetCrease() {//对相邻两个面的力，待完成
+            if (Triangle1 == -1 || Triangle2 == -1)
+            {
+                return;
+            }
+            Vector3 norm1 = triangles[Triangle1].GetNorm();
+            Vector3 norm2 = triangles[Triangle2].GetNorm();
+            float theta = Vector3.Angle(norm1, norm2);
+            float k_crease;
+            float _target;
+            if (type == EdgeType.Face)
+            {
+                k_crease = init_length * k_face;
+                _target = 0;
+            }
+            else {
+                k_crease = init_length * k_fold;
+                if (type == EdgeType.Mountain) _target = -target_angle;
+                else _target = target_angle;
+                  }
+            int p3 = node1;
+            int p4 = node2;
+            int p1,p2;
+            if (edges[triangles[Triangle1].Edge1] == this)
+            {
+                if (edges[triangles[Triangle1].Edge2].node1 == p3 || edges[triangles[Triangle1].Edge2].node1 == p4)
+                {
+                    p1 = edges[triangles[Triangle1].Edge2].node2;
+                }
+                else p1 = edges[triangles[Triangle1].Edge2].node1;
+            }else if(edges[triangles[Triangle1].Edge1].node1 == p3 || edges[triangles[Triangle1].Edge1].node1 == p4)
+            {
+                p1 = edges[triangles[Triangle1].Edge1].node2;
+            }else p1 = edges[triangles[Triangle1].Edge1].node1;
 
+            if (edges[triangles[Triangle2].Edge1] == this)
+            {
+                if (edges[triangles[Triangle2].Edge2].node1 == p3 || edges[triangles[Triangle2].Edge2].node1 == p4)
+                {
+                    p2 = edges[triangles[Triangle2].Edge2].node2;
+                }
+                else p2 = edges[triangles[Triangle2].Edge2].node1;
+            }
+            else if (edges[triangles[Triangle2].Edge1].node1 == p3 || edges[triangles[Triangle2].Edge1].node1 == p4)
+            {
+                p2 = edges[triangles[Triangle2].Edge1].node2;
+            }
+            else p2 = edges[triangles[Triangle2].Edge1].node1;
+
+            float h1 = Utils.DistanceFromPoint2Line(nodes[p1].position, nodes[p3].position, nodes[p4].position);
+            float h2 = Utils.DistanceFromPoint2Line(nodes[p2].position, nodes[p3].position, nodes[p4].position);
+            Vector3 factor1= (-k_crease) * (theta - _target) * norm1 / h1;
+            Vector3 factor2 = (-k_crease) * (theta - _target) * norm2 / h2;
+            nodes[p1].f += factor1;
+            nodes[p2].f += factor2;
+            nodes[p3].f += factor1 * (-Utils.CoTangentFormPoint2Line(nodes[p4].position, nodes[p3].position, nodes[p1].position)) /
+                (Utils.CoTangentFormPoint2Line(nodes[p3].position, nodes[p1].position, nodes[p4].position)
+                + Utils.CoTangentFormPoint2Line(nodes[p4].position, nodes[p3].position, nodes[p1].position))
+                + factor2 * (-Utils.CoTangentFormPoint2Line(nodes[p4].position, nodes[p2].position, nodes[p3].position)) /
+                (Utils.CoTangentFormPoint2Line(nodes[p3].position, nodes[p4].position, nodes[p2].position)
+                + Utils.CoTangentFormPoint2Line(nodes[p4].position, nodes[p2].position, nodes[p3].position));
+
+            nodes[p4].f += factor1 * (-Utils.CoTangentFormPoint2Line(nodes[p3].position, nodes[p1].position, nodes[p4].position)) /
+               (Utils.CoTangentFormPoint2Line(nodes[p3].position, nodes[p1].position, nodes[p4].position)
+               + Utils.CoTangentFormPoint2Line(nodes[p4].position, nodes[p3].position, nodes[p1].position))
+               + factor2 * (-Utils.CoTangentFormPoint2Line(nodes[p3].position, nodes[p4].position, nodes[p2].position)) /
+               (Utils.CoTangentFormPoint2Line(nodes[p3].position, nodes[p4].position, nodes[p2].position)
+               + Utils.CoTangentFormPoint2Line(nodes[p4].position, nodes[p2].position, nodes[p3].position));
         }
     }
     class Triangle
-    {
+    {//初始化时保证edge1->2->3为顺时针
         public int Edge1;
         public int Edge2;
         public int Edge3;
+        public float init_angle12;
+        public float init_angle23;
+        public float init_angle13;
         public void SetFaceForce() { }//三角形内力，待完成
+        public Vector3 GetNorm()
+        {
+            Vector3 e1 = nodes[edges[Edge1].node2].position - nodes[edges[Edge1].node1].position;
+            Vector3 e2 = nodes[edges[Edge2].node2].position - nodes[edges[Edge1].node1].position;
+            return Vector3.Cross(e1, e2);
+        }
     }
 
 
