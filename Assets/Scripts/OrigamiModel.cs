@@ -16,9 +16,9 @@ public class OrigamiModel : MonoBehaviour
     {
         public Vector3 prev_pos;
         public Vector3 position;
-        public Vector3 f;
-        public Vector3 a;
-        public Vector3 v;
+        public Vector3 f=Vector3.zero;
+        public Vector3 a=Vector3.zero;
+        public Vector3 v=Vector3.zero;
         public void Update()
         {
             if (mode == Mode.Verlet)
@@ -28,6 +28,11 @@ public class OrigamiModel : MonoBehaviour
                 prev_pos = position;
                 position = new_pos;
                 f = Vector3.zero;
+            }else if (mode == Mode.Euler)
+            {
+                a = f / mass;
+                position += v * Time.deltaTime;
+                v += a * Time.deltaTime;
             }
         }
 
@@ -128,9 +133,9 @@ public class OrigamiModel : MonoBehaviour
             float alpha = Vector3.Angle(n1.position - n.position, n2.position - n.position);
             Vector3 factor1 = Vector3.Cross(GetNorm(), n1.position - n.position)/ (n1.position - n.position).sqrMagnitude;
             Vector3 factor2 = Vector3.Cross(GetNorm(), n2.position - n.position) / (n2.position - n.position).sqrMagnitude;
-            n1.f += (-k_face) * (alpha - init_angle) * factor1;
-            n2.f += (-k_face) * (alpha - init_angle) * factor1;
-            n.f+= (-k_face) * (alpha - init_angle) * (factor2-factor1);
+            n1.f += (-k_face) * (alpha - init_angle) * factor1.normalized/factor1.magnitude;//ø…ƒ‹”–bug
+            n2.f += (-k_face) * (alpha - init_angle) * factor2.normalized / factor2.magnitude;
+            n.f+= (-k_face) * (alpha - init_angle) * (factor2-factor1).normalized/(factor2-factor1).magnitude;
 
         }
     }
