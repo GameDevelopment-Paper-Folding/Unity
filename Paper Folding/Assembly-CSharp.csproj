@@ -64,8 +64,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\FoldPercent.cs" />
+    <Compile Include="Assets\Scripts\MouseControlModel.cs" />
+    <Compile Include="Assets\Scripts\OrigamiModel.cs" />
     <Compile Include="Assets\Scripts\Reset.cs" />
     <Compile Include="Assets\Scripts\Toggled.cs" />
+    <Compile Include="Assets\Scripts\Utils.cs" />
     <Reference Include="UnityEngine">
       <HintPath>D:/Unity/2019.4.22f1c1/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>
